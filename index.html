@@ -108,6 +108,16 @@
   }
   .toast.vis { opacity: 1; }
   .hidden { display: none !important; }
+  dialog#ayuda {
+    border: 0; border-radius: 12px; padding: 20px 22px; max-width: 640px; width: calc(100% - 32px);
+    max-height: calc(100vh - 40px); color: var(--ink); background: var(--card);
+  }
+  dialog#ayuda::backdrop { background: rgba(20, 24, 30, .45); }
+  .ayuda-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  dialog#ayuda h4 { margin: 18px 0 6px; font-size: 15px; }
+  dialog#ayuda ol, dialog#ayuda ul { margin: 0; padding-left: 22px; }
+  dialog#ayuda li { margin-bottom: 6px; }
+  .copia-pendiente { color: var(--warn) !important; font-weight: 600; }
   @media (max-width: 560px) {
     .pac { grid-template-columns: 1fr 90px; }
   }
@@ -118,7 +128,10 @@
   <div class="wrap">
     <div class="top">
       <h1>Facturación · obras sociales</h1>
-      <span class="small muted" id="estadoGuardado"></span>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="small muted" id="estadoGuardado"></span>
+        <button class="btn pri" id="btnAyuda">¿Cómo se usa?</button>
+      </div>
     </div>
     <nav id="nav">
       <button data-view="facturar" class="on">Facturar</button>
@@ -139,6 +152,46 @@
 </main>
 
 <div class="toast" id="toast"></div>
+
+<dialog id="ayuda">
+  <div class="ayuda-head">
+    <h2 style="margin:0">¿Cómo se usa?</h2>
+    <button class="btn" id="btnCerrarAyuda">Cerrar</button>
+  </div>
+
+  <div class="alert warn" style="margin-top:12px"><b>Importante:</b> todo se guarda solo en esta PC. <b>Cada vez que termines, guardá la copia de seguridad.</b> Si se borra el navegador, esa copia es lo único que queda.</div>
+
+  <h4>La primera vez</h4>
+  <ol>
+    <li>Andá a <b>Copia de seguridad</b> → <b>Recuperar copia</b> y elegí el archivo <b>pacientes-marlene.json</b>. Se cargan todos los pacientes.</li>
+    <li>En <b>Pacientes</b>, revisá cada uno. Si al editar ves algo en <span class="falta">[rojo]</span>, es un dato que falta.</li>
+  </ol>
+
+  <h4>Cada mes, para facturar</h4>
+  <ol>
+    <li><b>¿Llegó resolución nueva?</b> Cargala en <b>Valores por mes</b>: mes, número y valor por sesión.</li>
+    <li>Andá a <b>Facturar</b> y elegí el mes que facturás (normalmente, el anterior).</li>
+    <li>En cada paciente, poné la <b>cantidad de sesiones</b>. Aparecen los datos y el texto armado.</li>
+    <li>En ARCA, usá los botones <b>Copiar</b>: CUIT, valor por sesión y <b>Copiar descripción</b>. Pegá cada uno en su lugar.</li>
+    <li>Cuando emitas la factura, tocá <b>Marcar como facturado</b>. Así sabés cuántos te faltan.</li>
+    <li>Si aparece un aviso amarillo de <b>tope de sesiones</b>, revisá la cantidad antes de facturar.</li>
+  </ol>
+
+  <h4>Al terminar (siempre)</h4>
+  <ol>
+    <li>Andá a <b>Copia de seguridad</b> → <b>Guardar copia</b>.</li>
+    <li>Se baja un archivo con la fecha. Guardalo siempre en la <b>misma carpeta</b>. El más nuevo es el que vale.</li>
+    <li>No lo mandes por mail ni WhatsApp: tiene datos de los pacientes.</li>
+  </ol>
+
+  <h4>Otras cosas</h4>
+  <ul>
+    <li><b>Paciente nuevo:</b> Pacientes → + Paciente nuevo. Abajo vas viendo cómo queda el texto.</li>
+    <li><b>Paciente que dejó de venir:</b> editalo y destildá "Paciente activo". No se borra, solo deja de aparecer en Facturar.</li>
+    <li><b>Una obra social cambió el texto:</b> Obras sociales → Editar. El cambio queda para todos sus pacientes.</li>
+    <li><b>Se borró todo o cambiaste de PC:</b> Copia de seguridad → Recuperar copia, con el archivo más nuevo.</li>
+  </ul>
+</dialog>
 
 <script>
 "use strict";
@@ -248,15 +301,23 @@ function cargar() {
   S.sesiones = S.sesiones || {};
   S.facturado = S.facturado || {};
 }
-function guardar() {
+// cambio=false cuando no es una modificación de datos (carga inicial, copia de seguridad)
+function guardar(cambio = true) {
+  if (cambio) S.ultimoCambio = new Date().toISOString();
   try {
     localStorage.setItem(KEY, JSON.stringify(S));
     guardadoOk = true;
   } catch (e) {
     guardadoOk = false;
   }
-  $("#estadoGuardado").textContent = guardadoOk ? "Guardado en esta PC" : "⚠ No se pudo guardar en este navegador";
+  const est = $("#estadoGuardado");
+  est.classList.toggle("copia-pendiente", !guardadoOk || copiaPendiente());
+  est.textContent = !guardadoOk ? "⚠ No se pudo guardar en este navegador"
+    : copiaPendiente() ? "⚠ Falta guardar la copia de seguridad"
+    : "Guardado en esta PC";
+  est.style.cursor = copiaPendiente() ? "pointer" : "";
 }
+const copiaPendiente = () => !!S.ultimoCambio && (!S.ultimaCopia || S.ultimoCambio > S.ultimaCopia);
 
 /* ============================================================
    Utilidades
@@ -972,7 +1033,7 @@ function renderCopia() {
   `;
   $("#btnExportar").addEventListener("click", () => {
     S.ultimaCopia = new Date().toISOString();
-    guardar();
+    guardar(false);
     const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -993,7 +1054,8 @@ function renderCopia() {
       S = d;
       S.sesiones = S.sesiones || {};
       S.facturado = S.facturado || {};
-      guardar();
+      S.ultimoCambio = null;
+      guardar(false);
       toast("Copia recuperada");
       renderCopia();
     } catch (err) {
@@ -1033,9 +1095,25 @@ document.addEventListener("click", (e) => {
   if (eo) { editObra = eo.dataset.editarObra; renderObras(); return; }
 });
 
+/* ============================================================
+   Instrucciones y aviso al cerrar
+   ============================================================ */
+const dlg = $("#ayuda");
+$("#btnAyuda").addEventListener("click", () => dlg.showModal());
+$("#btnCerrarAyuda").addEventListener("click", () => dlg.close());
+dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+$("#estadoGuardado").addEventListener("click", () => { if (copiaPendiente()) irA("copia"); });
+
+// Si hay cambios sin copia, el navegador pregunta antes de cerrar la pestaña
+window.addEventListener("beforeunload", (e) => {
+  if (copiaPendiente()) { e.preventDefault(); e.returnValue = ""; }
+});
+
 cargar();
-guardar();
+guardar(false);
 render();
+// La primera vez que entra, mostrar las instrucciones
+if (!S.pacientes.length) dlg.showModal();
 </script>
 </body>
 </html>
