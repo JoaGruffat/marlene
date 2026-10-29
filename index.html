@@ -616,7 +616,12 @@ function renderFacturar() {
     </div>`}
   `;
 
-  $("#fMes").addEventListener("change", (e) => { mesActual = e.target.value || mesAnterior(); renderFacturar(); });
+  $("#fMes").addEventListener("change", (e) => {
+    mesActual = e.target.value || mesAnterior();
+    S.config.mesFacturar = mesActual; // recordar el mes elegido al recargar
+    guardar(false);
+    renderFacturar();
+  });
   const b = $("#fBuscar");
   if (b) b.addEventListener("input", (e) => { filtroTexto = e.target.value; renderListaFacturar(); });
   const c = $("#fCons");
@@ -1354,6 +1359,7 @@ window.addEventListener("beforeunload", (e) => {
 });
 
 cargar();
+if (S.config.mesFacturar) mesActual = S.config.mesFacturar;
 guardar(false);
 render();
 // La primera vez que entra, mostrar las instrucciones
