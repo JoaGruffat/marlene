@@ -1,1 +1,1041 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Facturación Marlene</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --card: #ffffff;
+    --ink: #22272e;
+    --muted: #6b7280;
+    --line: #e3e1db;
+    --accent: #3b6e8f;
+    --accent-soft: #e6eff5;
+    --ok: #2f7d4f;
+    --ok-soft: #e4f3ea;
+    --warn: #a15c07;
+    --warn-soft: #fdf1df;
+    --bad: #b3261e;
+    --bad-soft: #fbe7e5;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 8px; }
+  h1 { font-size: 18px; margin: 0; }
+  nav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 8px; }
+  nav button {
+    border: 0; background: transparent; padding: 8px 12px; border-radius: 8px;
+    font: inherit; color: var(--muted); cursor: pointer; white-space: nowrap;
+  }
+  nav button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  main { padding: 20px 0 60px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  h3 { font-size: 15px; margin: 22px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .row > * { flex: 1 1 160px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+  input, select, textarea {
+    width: 100%; font: inherit; color: inherit; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .btn {
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    padding: 7px 12px; border-radius: 8px; font: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.pri { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.sm { padding: 4px 9px; font-size: 13px; }
+  .btn.bad { color: var(--bad); }
+  .btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .alert { padding: 10px 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+  .alert.warn { background: var(--warn-soft); color: var(--warn); }
+  .alert.bad { background: var(--bad-soft); color: var(--bad); }
+  .alert.info { background: var(--accent-soft); color: var(--accent); }
+  .mesbar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+  .mesbar .dato { font-size: 14px; }
+  .mesbar .dato b { font-size: 16px; }
 
+  /* Facturar */
+  .pac { display: grid; grid-template-columns: 1fr 110px; gap: 10px; align-items: start; }
+  .pac .nom { font-weight: 600; }
+  .pac.hecho { opacity: .6; }
+  .out { grid-column: 1 / -1; display: none; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .out.vis { display: block; }
+  .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .campo { background: var(--bg); border-radius: 8px; padding: 7px 10px; }
+  .campo .k { font-size: 12px; color: var(--muted); }
+  .campo .v { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; word-break: break-word; }
+  .desc { background: var(--bg); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; }
+  .desc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .falta { background: var(--bad-soft); color: var(--bad); border-radius: 4px; padding: 0 3px; }
+  .lleno { background: var(--ok-soft); border-radius: 4px; padding: 0 2px; }
+
+  .lista-item { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .chip { font-size: 12px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); background: #fff; cursor: pointer; font-family: ui-monospace, Consolas, monospace; }
+  .chip:hover { border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .acciones { display: flex; gap: 6px; justify-content: flex-end; }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 8px;
+    font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.vis { opacity: 1; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) {
+    .pac { grid-template-columns: 1fr 90px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>Facturación · obras sociales</h1>
+      <span class="small muted" id="estadoGuardado"></span>
+    </div>
+    <nav id="nav">
+      <button data-view="facturar" class="on">Facturar</button>
+      <button data-view="pacientes">Pacientes</button>
+      <button data-view="obras">Obras sociales</button>
+      <button data-view="valores">Valores por mes</button>
+      <button data-view="copia">Copia de seguridad</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-facturar"></section>
+  <section id="view-pacientes" class="hidden"></section>
+  <section id="view-obras" class="hidden"></section>
+  <section id="view-valores" class="hidden"></section>
+  <section id="view-copia" class="hidden"></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Datos iniciales
+   ============================================================ */
+const KEY = "marlene-facturacion-v1";
+
+const VALORES_INICIALES = [
+  { mes: "2026-04", resolucion: "41/2026",   valor: 18856.12 },
+  { mes: "2026-05", resolucion: "517/2026",  valor: 19346.37 },
+  { mes: "2026-06", resolucion: "1297/2026", valor: 19752.65 },
+  { mes: "2026-07", resolucion: "2227/2026", valor: 20127.95 },
+  { mes: "2026-08", resolucion: "2775/2026", valor: 20550.64 },
+  { mes: "2026-09", resolucion: "3487/2026", valor: 20900.00 },
+  { mes: "2026-10", resolucion: "1/2026",    valor: 21297.10 },
+];
+
+const PLANTILLA_BASE = "Honorarios profesionales {sesiones_letras} sesiones psicoterapia individual {mes}. Beneficiario: {nombre_apellido} DNI: {dni} Afiliado N°: {afiliado} DX: {dx}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}.";
+
+const OBRAS_INICIALES = [
+  { nombre: "OSAP", cuit: "30615873531", iva: "Responsable Inscripto",
+    plantilla: "Honorarios profesionales prestación psicología {mes}. Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}. Beneficiario: {apellido_nombre}. Afiliado N° {afiliado}. DX: {dx}." },
+  { nombre: "OSFATLYF", cuit: "30663221244", iva: "Responsable Inscripto",
+    plantilla: "Honorarios profesionales por {sesiones} sesiones de psicología durante {mes}. Paciente: {apellido_nombre} N° Afiliado {afiliado} CUIL {cuil}. CUD {dx}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "OSUOMRA", cuit: "30585207760", iva: "Sujeto exento",
+    plantilla: PLANTILLA_BASE },
+  { nombre: "O.S.CHO.CA", cuit: "30677883096", iva: "Sujeto exento",
+    plantilla: "Honorarios profesionales por {sesiones_letras} sesiones de psicoterapia individual {mes}. Beneficiario: {apellido_nombre}. Nº de afiliado: {afiliado}. DNI {dni}. Ley N° 24.901 Resolución {resolucion} valor sesión ${valor}. Son {total_letras}." },
+  { nombre: "Medifé (OSPEF y EPCA)", cuit: "30691183536", iva: "Sujeto exento",
+    plantilla: "Honorarios profesionales por {sesiones_letras} sesiones de psicología {mes}. Beneficiario: {nombre_apellido}. DNI {dni}. DX: {dx}. Ley N° 24.901 Resolución {resolucion} valor sesión ${valor}. Son {total_letras}." },
+  { nombre: "OSPIM", cuit: "30629138567", iva: "Sujeto exento",
+    plantilla: "Honorarios profesionales {sesiones_letras} sesiones psicología {mes} al beneficiario: {nombre_apellido}, DNI {dni}. Diagnóstico: {dx}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "ASE", cuit: "30578079994", iva: "Responsable Inscripto",
+    plantilla: "Honorarios profesionales {sesiones_letras} sesiones psicología {mes} al beneficiario: {nombre_apellido}, DNI {dni}. Diagnóstico: {dx}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "ASSPE", cuit: "30707211306", iva: "Responsable Inscripto",
+    plantilla: "Honorarios profesionales {sesiones_letras} sesiones psicología {mes} al beneficiario: {nombre_apellido}, DNI {dni}. Diagnóstico: {dx}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "ACINDAR", cuit: "30546172275", iva: "Sujeto exento",
+    plantilla: PLANTILLA_BASE },
+  { nombre: "IOSFA", cuit: "", iva: "Consumidor final", facturarA: "tercero",
+    notas: "Se le factura al padre/madre como consumidor final.",
+    plantilla: "Honorarios profesionales por prestación de psicología {mes} {sesiones_letras} sesiones ({sesiones} horas). Beneficiario: {nombre_apellido}. DNI {dni}. Afiliado: {afiliado}. CUIL {cuil}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "OSPAT", cuit: "30679113433", iva: "Responsable Inscripto",
+    plantilla: "Honorarios profesionales {sesiones_letras} sesiones de prestación psicológica {mes}. Beneficiario: {apellido_nombre}. DNI {dni}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "OSDOP", cuit: "30585412453", iva: "Sujeto exento",
+    plantilla: "{Sesiones_letras} sesiones de psicología beneficiario: {apellido_nombre}. DNI {dni} Afiliado N° {afiliado} correspondiente al mes de {mes}. Ley N° 24.901 Resolución {resolucion} valor por sesión ${valor}. Son {total_letras}." },
+  { nombre: "SANCOR SALUD", cuit: "30590354798", iva: "Sujeto exento",
+    plantilla: PLANTILLA_BASE },
+  { nombre: "Mutual Federada 25 de Junio S.P.R.", cuit: "30541592608", iva: "Sujeto exento",
+    plantilla: PLANTILLA_BASE },
+  { nombre: "Particular", cuit: "", iva: "Consumidor final", facturarA: "tercero", usaResolucion: false,
+    notas: "Sin resolución: el valor por sesión se carga en cada paciente.",
+    plantilla: "Honorarios profesionales correspondientes a {sesiones} sesiones de psicoterapia individual durante el mes de {mes}. Beneficiario: {nombre_apellido} DNI {dni}. Valor por sesión ${valor}. Son {total_letras}." },
+];
+
+const VARIABLES = [
+  ["mes", "Mes y año (octubre 2026)"],
+  ["sesiones", "Sesiones en número (8)"],
+  ["sesiones_letras", "Sesiones en letras (ocho)"],
+  ["Sesiones_letras", "Igual, con mayúscula (Ocho)"],
+  ["resolucion", "N° de resolución"],
+  ["valor", "Valor por sesión (21297.10)"],
+  ["total_letras", "Total en letras con /100"],
+  ["nombre_apellido", "Nombre Apellido"],
+  ["apellido_nombre", "Apellido Nombre"],
+  ["dni", "DNI con puntos"],
+  ["afiliado", "N° de afiliado"],
+  ["cuil", "CUIL"],
+  ["dx", "Diagnóstico"],
+];
+const ETIQUETA = Object.fromEntries(VARIABLES);
+
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+/* ============================================================
+   Estado y guardado (solo en este navegador)
+   ============================================================ */
+const uid = (p) => p + "_" + Math.random().toString(36).slice(2, 9);
+
+function estadoInicial() {
+  return {
+    version: 1,
+    valores: VALORES_INICIALES.map(v => ({ ...v })),
+    obras: OBRAS_INICIALES.map(o => ({
+      id: uid("o"), nombre: o.nombre, cuit: o.cuit, iva: o.iva,
+      usaResolucion: o.usaResolucion !== false,
+      facturarA: o.facturarA || "obra",
+      notas: o.notas || "", plantilla: o.plantilla,
+    })),
+    pacientes: [],
+    sesiones: {},    // { "2026-10": { pacienteId: 8 } }
+    facturado: {},   // { "2026-10": { pacienteId: true } }
+    ultimaCopia: null,
+  };
+}
+
+let S;
+let guardadoOk = true;
+function cargar() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    S = raw ? JSON.parse(raw) : estadoInicial();
+  } catch (e) {
+    S = estadoInicial();
+  }
+  S.sesiones = S.sesiones || {};
+  S.facturado = S.facturado || {};
+}
+function guardar() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(S));
+    guardadoOk = true;
+  } catch (e) {
+    guardadoOk = false;
+  }
+  $("#estadoGuardado").textContent = guardadoOk ? "Guardado en esta PC" : "⚠ No se pudo guardar en este navegador";
+}
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("vis");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("vis"), 1400);
+}
+
+async function copiar(texto) {
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  toast("Copiado");
+}
+
+// Centavos enteros para no arrastrar errores de redondeo
+const aCentavos = (n) => Math.round(Number(n) * 100);
+// Para copiar: 21297.10 (sin $, sin miles, punto decimal)
+const numCopia = (cent) => (cent / 100).toFixed(2);
+// Para ver: 21.297,10
+const numVer = (cent) => (cent / 100).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function nombreMes(ym) {
+  if (!ym) return "";
+  const [a, m] = ym.split("-").map(Number);
+  return MESES[m - 1] + " " + a;
+}
+function mesAnterior() {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+function dniConPuntos(dni) {
+  const d = String(dni || "").replace(/\D/g, "");
+  return d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/* ---------- Números en letras ---------- */
+const UNI = ["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce","trece","catorce","quince","dieciséis","diecisiete","dieciocho","diecinueve","veinte","veintiuno","veintidós","veintitrés","veinticuatro","veinticinco","veintiséis","veintisiete","veintiocho","veintinueve"];
+const DEC = ["","","","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"];
+const CEN = ["","ciento","doscientos","trescientos","cuatrocientos","quinientos","seiscientos","setecientos","ochocientos","novecientos"];
+
+function hasta99(n) {
+  if (n < 30) return UNI[n];
+  const d = Math.floor(n / 10), u = n % 10;
+  return DEC[d] + (u ? " y " + UNI[u] : "");
+}
+function hasta999(n) {
+  if (n === 100) return "cien";
+  const c = Math.floor(n / 100), r = n % 100;
+  if (!c) return hasta99(r);
+  return CEN[c] + (r ? " " + hasta99(r) : "");
+}
+// "uno" -> "un" / "veintiuno" -> "veintiún" delante de "mil" o "pesos"
+const apocope = (s) => s.replace(/veintiuno$/, "veintiún").replace(/uno$/, "un");
+
+function enteroEnLetras(n) {
+  if (n === 0) return "cero";
+  const mill = Math.floor(n / 1e6), miles = Math.floor(n / 1000) % 1000, resto = n % 1000;
+  const partes = [];
+  if (mill) partes.push(mill === 1 ? "un millón" : apocope(hasta999(mill)) + " millones");
+  if (miles) partes.push(miles === 1 ? "mil" : apocope(hasta999(miles)) + " mil");
+  if (resto) partes.push(apocope(hasta999(resto)));
+  let s = partes.join(" ");
+  if (mill && !miles && !resto) s += " de";
+  return s;
+}
+function totalEnLetras(cent) {
+  const pesos = Math.floor(cent / 100), c = cent % 100;
+  return enteroEnLetras(pesos) + " pesos con " + String(c).padStart(2, "0") + "/100";
+}
+function sesionesEnLetras(n) {
+  // femenino: "una sesión", "veintiuna sesiones"
+  return hasta99(n).replace(/uno$/, "una");
+}
+
+/* ============================================================
+   Armado del texto
+   ============================================================ */
+const obraDe = (p) => S.obras.find(o => o.id === p.obraId);
+const valorDelMes = (mes) => S.valores.find(v => v.mes === mes);
+
+// Devuelve { vars, error, totalCent, valorCent }
+function calcular(p, mes, sesiones) {
+  const o = obraDe(p);
+  const out = { vars: {}, error: "", totalCent: 0, valorCent: 0 };
+  if (!o) { out.error = "El paciente no tiene obra social asignada."; return out; }
+  let valorCent = 0, resolucion = "";
+  if (o.usaResolucion) {
+    const v = valorDelMes(mes);
+    if (!v) { out.error = `No hay valor cargado para ${nombreMes(mes)}. Cargalo en "Valores por mes".`; }
+    else { valorCent = aCentavos(v.valor); resolucion = v.resolucion; }
+  } else {
+    valorCent = aCentavos(p.valorSesion || 0);
+    if (!valorCent) out.error = "Este paciente no tiene valor por sesión cargado.";
+  }
+  const n = Number(sesiones) || 0;
+  out.valorCent = valorCent;
+  out.totalCent = valorCent * n;
+  const nombre = (p.nombre || "").trim(), apellido = (p.apellido || "").trim();
+  const sl = n ? sesionesEnLetras(n) : "";
+  out.vars = {
+    mes: nombreMes(mes),
+    sesiones: n ? String(n) : "",
+    sesiones_letras: sl,
+    Sesiones_letras: sl ? sl[0].toUpperCase() + sl.slice(1) : "",
+    resolucion,
+    valor: valorCent ? numCopia(valorCent) : "",
+    total_letras: valorCent && n ? totalEnLetras(out.totalCent) : "",
+    nombre_apellido: [nombre, apellido].filter(Boolean).join(" "),
+    apellido_nombre: [apellido, nombre].filter(Boolean).join(" "),
+    dni: dniConPuntos(p.dni),
+    afiliado: (p.afiliado || "").trim(),
+    cuil: (p.cuil || "").trim(),
+    dx: (p.dx || "").trim(),
+  };
+  return out;
+}
+
+// Parte la plantilla en pedazos: texto fijo / variable llena / variable que falta
+function trozos(plantilla, vars) {
+  const res = [];
+  let ult = 0;
+  String(plantilla || "").replace(/\{(\w+)\}/g, (m, k, idx) => {
+    if (idx > ult) res.push({ t: plantilla.slice(ult, idx) });
+    const val = vars[k];
+    if (val) res.push({ t: val, lleno: true });
+    else res.push({ t: k in ETIQUETA ? "falta: " + ETIQUETA[k] : "variable desconocida {" + k + "}", falta: true });
+    ult = idx + m.length;
+  });
+  if (ult < String(plantilla || "").length) res.push({ t: plantilla.slice(ult) });
+  return res;
+}
+const textoPlano = (tz) => tz.map(x => x.falta ? "[" + x.t + "]" : x.t).join("");
+const textoHtml = (tz, marcarLlenos) => tz.map(x =>
+  x.falta ? `<span class="falta">[${esc(x.t)}]</span>` :
+  x.lleno && marcarLlenos ? `<span class="lleno">${esc(x.t)}</span>` : esc(x.t)).join("");
+
+/* ============================================================
+   Navegación
+   ============================================================ */
+let vista = "facturar";
+$("#nav").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  irA(b.dataset.view);
+});
+function irA(v) {
+  vista = v;
+  $$("#nav button").forEach(b => b.classList.toggle("on", b.dataset.view === v));
+  $$("main > section").forEach(s => s.classList.toggle("hidden", s.id !== "view-" + v));
+  render();
+  window.scrollTo(0, 0);
+}
+function render() {
+  ({ facturar: renderFacturar, pacientes: renderPacientes, obras: renderObras, valores: renderValores, copia: renderCopia })[vista]();
+}
+
+/* ============================================================
+   FACTURAR
+   ============================================================ */
+let mesActual = mesAnterior();
+let filtroConsultorio = "";
+let filtroTexto = "";
+
+function renderFacturar() {
+  const el = $("#view-facturar");
+  const v = valorDelMes(mesActual);
+  const activos = S.pacientes.filter(p => p.activo !== false);
+  const ses = S.sesiones[mesActual] || {};
+  const fac = S.facturado[mesActual] || {};
+  const hechos = activos.filter(p => fac[p.id]).length;
+
+  let avisoCopia = "";
+  if (S.pacientes.length) {
+    const dias = S.ultimaCopia ? Math.floor((Date.now() - new Date(S.ultimaCopia)) / 864e5) : null;
+    if (dias === null) avisoCopia = `<div class="alert warn">Todavía no guardaste ninguna copia de seguridad. <a href="#" data-ir="copia">Guardar ahora</a>.</div>`;
+    else if (dias > 30) avisoCopia = `<div class="alert warn">La última copia de seguridad tiene ${dias} días. <a href="#" data-ir="copia">Guardar una nueva</a>.</div>`;
+  }
+
+  el.innerHTML = `
+    ${avisoCopia}
+    <div class="card">
+      <div class="mesbar">
+        <div style="flex:0 0 190px">
+          <label for="fMes">Mes que se factura</label>
+          <input type="month" id="fMes" value="${esc(mesActual)}">
+        </div>
+        ${v ? `
+          <div class="dato">Resolución<br><b>${esc(v.resolucion)}</b></div>
+          <div class="dato">Valor por sesión<br><b>${numVer(aCentavos(v.valor))}</b></div>
+        ` : `<div class="alert bad" style="flex:1">No hay valor cargado para ${esc(nombreMes(mesActual))}. <a href="#" data-ir="valores">Cargarlo</a>.</div>`}
+        <div class="dato" style="margin-left:auto">Facturados<br><b>${hechos} de ${activos.length}</b></div>
+      </div>
+    </div>
+
+    ${activos.length ? `
+    <div class="row" style="margin:14px 0 4px">
+      <div><label for="fBuscar">Buscar paciente</label><input id="fBuscar" placeholder="Nombre o apellido" value="${esc(filtroTexto)}"></div>
+      <div style="flex:0 0 170px"><label for="fCons">Consultorio</label>
+        <select id="fCons">
+          <option value="">Todos</option>
+          <option ${filtroConsultorio === "ENA" ? "selected" : ""}>ENA</option>
+          <option ${filtroConsultorio === "CRECER" ? "selected" : ""}>CRECER</option>
+        </select>
+      </div>
+    </div>
+    <div id="listaFacturar"></div>
+    ` : `
+    <div class="card">
+      <p style="margin-top:0"><b>Todavía no hay pacientes.</b></p>
+      <p class="muted">Cargalos una sola vez en la pestaña Pacientes. Después, cada mes, solo ponés la cantidad de sesiones.</p>
+      <button class="btn pri" data-ir="pacientes">Cargar pacientes</button>
+      <button class="btn" id="btnEjemplo">Probar con 3 pacientes inventados</button>
+    </div>`}
+  `;
+
+  $("#fMes").addEventListener("change", (e) => { mesActual = e.target.value || mesAnterior(); renderFacturar(); });
+  const b = $("#fBuscar");
+  if (b) b.addEventListener("input", (e) => { filtroTexto = e.target.value; renderListaFacturar(); });
+  const c = $("#fCons");
+  if (c) c.addEventListener("change", (e) => { filtroConsultorio = e.target.value; renderListaFacturar(); });
+  const ej = $("#btnEjemplo");
+  if (ej) ej.addEventListener("click", cargarEjemplo);
+  if (activos.length) renderListaFacturar();
+}
+
+function renderListaFacturar() {
+  const cont = $("#listaFacturar");
+  const ses = S.sesiones[mesActual] || {};
+  const fac = S.facturado[mesActual] || {};
+  const q = filtroTexto.trim().toLowerCase();
+  const lista = S.pacientes
+    .filter(p => p.activo !== false)
+    .filter(p => !filtroConsultorio || p.consultorio === filtroConsultorio)
+    .filter(p => !q || (p.nombre + " " + p.apellido).toLowerCase().includes(q));
+
+  // Agrupar por obra social
+  const grupos = new Map();
+  for (const p of lista) {
+    const o = obraDe(p);
+    const k = o ? o.nombre : "Sin obra social";
+    if (!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(p);
+  }
+  const nombres = [...grupos.keys()].sort((a, b) => a.localeCompare(b, "es"));
+
+  cont.innerHTML = nombres.length ? nombres.map(k => `
+    <h3>${esc(k)}</h3>
+    ${grupos.get(k).sort((a, b) => (a.apellido || "").localeCompare(b.apellido || "", "es")).map(p => `
+      <div class="card pac ${fac[p.id] ? "hecho" : ""}" data-pid="${p.id}">
+        <div>
+          <div class="nom">${esc(p.apellido)} ${esc(p.nombre)} ${fac[p.id] ? '<span class="pill ok">Facturado</span>' : ""}</div>
+          <div class="small muted">
+            ${p.consultorio ? esc(p.consultorio) + " · " : ""}${p.horario ? esc(p.horario) + " · " : ""}${p.tope ? "Tope " + esc(p.tope) + " sesiones" : "Sin tope"}
+          </div>
+        </div>
+        <div>
+          <label>Sesiones</label>
+          <input type="number" min="0" max="40" inputmode="numeric" class="inSes" value="${ses[p.id] ?? ""}">
+        </div>
+        <div class="out"></div>
+      </div>`).join("")}
+  `).join("") : `<p class="muted">No hay pacientes con ese filtro.</p>`;
+
+  $$(".pac", cont).forEach(card => {
+    const pid = card.dataset.pid;
+    const inp = $(".inSes", card);
+    inp.addEventListener("input", () => {
+      S.sesiones[mesActual] = S.sesiones[mesActual] || {};
+      const n = parseInt(inp.value, 10);
+      if (n > 0) S.sesiones[mesActual][pid] = n; else delete S.sesiones[mesActual][pid];
+      guardar();
+      renderSalida(card, pid);
+    });
+    renderSalida(card, pid);
+  });
+}
+
+function renderSalida(card, pid) {
+  const out = $(".out", card);
+  const p = S.pacientes.find(x => x.id === pid);
+  const n = (S.sesiones[mesActual] || {})[pid];
+  const hecho = !!(S.facturado[mesActual] || {})[pid];
+  if (!n) { out.classList.remove("vis"); out.innerHTML = ""; return; }
+  const o = obraDe(p);
+  const r = calcular(p, mesActual, n);
+  const tz = trozos(o ? o.plantilla : "", r.vars);
+  const faltan = tz.filter(x => x.falta).length;
+  const texto = textoPlano(tz);
+
+  const tercero = p.facturarA === "tercero";
+  const receptor = tercero
+    ? [
+        ["Factura a", (p.terceroNombre || "—") + " · Consumidor final", null],
+        ["DNI / CUIL", p.terceroDoc || "—", p.terceroDoc ? p.terceroDoc.replace(/\D/g, "") : null],
+      ]
+    : [
+        ["CUIT " + (o ? o.nombre : ""), o && o.cuit ? o.cuit : "—", o && o.cuit ? o.cuit : null],
+        ["IVA", o ? o.iva : "—", null],
+      ];
+
+  const campos = [
+    ...receptor,
+    ["Valor por sesión", r.valorCent ? numVer(r.valorCent) : "—", r.valorCent ? numCopia(r.valorCent) : null],
+    ["Total (" + n + " ses.)", r.totalCent ? numVer(r.totalCent) : "—", r.totalCent ? numCopia(r.totalCent) : null],
+  ];
+
+  out.classList.add("vis");
+  out.innerHTML = `
+    ${r.error ? `<div class="alert bad">${esc(r.error)}</div>` : ""}
+    ${p.tope && n > p.tope ? `<div class="alert warn">Ojo: este paciente tiene tope de ${esc(p.tope)} sesiones y pusiste ${n}.</div>` : ""}
+    ${faltan ? `<div class="alert bad">Faltan ${faltan} dato(s) en el texto. Completalos en la ficha del paciente.</div>` : ""}
+    <div class="campos">
+      ${campos.map(([k, ver, cop]) => `
+        <div class="campo"><div class="k">${esc(k)}</div>
+          <div class="v"><span>${esc(ver)}</span>${cop ? `<button class="btn sm" data-copiar="${esc(cop)}">Copiar</button>` : ""}</div>
+        </div>`).join("")}
+    </div>
+    <div class="desc-head">
+      <span class="small muted">Descripción</span>
+      <button class="btn sm pri" data-copiar-desc>Copiar descripción</button>
+    </div>
+    <div class="desc">${textoHtml(tz, false)}</div>
+    <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
+      <button class="btn sm" data-editar-pac="${p.id}">Editar ficha</button>
+      <button class="btn sm ${hecho ? "" : "ok"}" data-hecho>${hecho ? "Desmarcar" : "Marcar como facturado"}</button>
+    </div>
+  `;
+  $("[data-copiar-desc]", out).addEventListener("click", () => copiar(texto));
+  $("[data-hecho]", out).addEventListener("click", () => {
+    S.facturado[mesActual] = S.facturado[mesActual] || {};
+    if (hecho) delete S.facturado[mesActual][pid]; else S.facturado[mesActual][pid] = true;
+    guardar();
+    renderFacturar();
+  });
+}
+
+/* ============================================================
+   PACIENTES
+   ============================================================ */
+let editPac = null; // id en edición, "nuevo", o null
+
+function renderPacientes() {
+  const el = $("#view-pacientes");
+  if (editPac) return renderFormPaciente(el);
+  const lista = [...S.pacientes].sort((a, b) => (a.apellido || "").localeCompare(b.apellido || "", "es"));
+  el.innerHTML = `
+    <div class="lista-item" style="margin-bottom:12px">
+      <h2 style="margin:0">Pacientes (${lista.length})</h2>
+      <button class="btn pri" id="btnNuevoPac">+ Paciente nuevo</button>
+    </div>
+    ${lista.length ? lista.map(p => {
+      const o = obraDe(p);
+      return `<div class="card lista-item">
+        <div>
+          <b>${esc(p.apellido)} ${esc(p.nombre)}</b> ${p.activo === false ? '<span class="pill warn">Inactivo</span>' : ""}
+          <div class="small muted">${esc(o ? o.nombre : "Sin obra social")}${p.consultorio ? " · " + esc(p.consultorio) : ""}${p.facturarA === "tercero" ? " · Factura a " + esc(p.terceroNombre || "tercero") : ""}</div>
+        </div>
+        <div class="acciones"><button class="btn sm" data-editar-pac="${p.id}">Editar</button></div>
+      </div>`;
+    }).join("") : `<p class="muted">Sin pacientes cargados.</p>`}
+  `;
+  $("#btnNuevoPac").addEventListener("click", () => { editPac = "nuevo"; renderPacientes(); });
+}
+
+function renderFormPaciente(el) {
+  const nuevo = editPac === "nuevo";
+  const p = nuevo ? { activo: true } : S.pacientes.find(x => x.id === editPac);
+  const obrasOrd = [...S.obras].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  el.innerHTML = `
+    <h2>${nuevo ? "Paciente nuevo" : "Editar paciente"}</h2>
+    <form id="formPac" class="card" autocomplete="off">
+      <div class="row">
+        <div><label>Nombre/s</label><input name="nombre" value="${esc(p.nombre)}" required></div>
+        <div><label>Apellido/s</label><input name="apellido" value="${esc(p.apellido)}" required></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label>Obra social</label>
+          <select name="obraId" required>
+            <option value="">Elegir…</option>
+            ${obrasOrd.map(o => `<option value="${o.id}" ${p.obraId === o.id ? "selected" : ""}>${esc(o.nombre)}</option>`).join("")}
+          </select>
+        </div>
+        <div><label>Consultorio</label>
+          <select name="consultorio">
+            <option value="">—</option>
+            <option ${p.consultorio === "ENA" ? "selected" : ""}>ENA</option>
+            <option ${p.consultorio === "CRECER" ? "selected" : ""}>CRECER</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label>DNI</label><input name="dni" inputmode="numeric" value="${esc(p.dni)}"></div>
+        <div><label>N° de afiliado</label><input name="afiliado" value="${esc(p.afiliado)}"></div>
+        <div><label>CUIL (si lo pide)</label><input name="cuil" value="${esc(p.cuil)}"></div>
+      </div>
+      <div style="margin-top:10px"><label>Diagnóstico (como va en la factura)</label><input name="dx" value="${esc(p.dx)}"></div>
+
+      <div class="row" style="margin-top:10px">
+        <div><label>¿A quién se factura?</label>
+          <select name="facturarA">
+            <option value="obra" ${p.facturarA !== "tercero" ? "selected" : ""}>A la obra social</option>
+            <option value="tercero" ${p.facturarA === "tercero" ? "selected" : ""}>A padre/madre (consumidor final)</option>
+          </select>
+        </div>
+        <div class="tercero"><label>Nombre de padre/madre</label><input name="terceroNombre" value="${esc(p.terceroNombre)}"></div>
+        <div class="tercero"><label>DNI o CUIL de padre/madre</label><input name="terceroDoc" value="${esc(p.terceroDoc)}"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="valorPropio"><label>Valor por sesión (particular)</label><input name="valorSesion" inputmode="decimal" placeholder="40000.00" value="${esc(p.valorSesion)}"></div>
+        <div><label>Tope de sesiones por mes</label><input name="tope" type="number" min="0" value="${esc(p.tope)}" placeholder="Sin tope"></div>
+        <div><label>Horario (nota interna)</label><input name="horario" value="${esc(p.horario)}" placeholder="Mar y jue 16 a 17"></div>
+      </div>
+      <label style="margin-top:12px;display:flex;gap:8px;align-items:center;color:var(--ink)">
+        <input type="checkbox" name="activo" style="width:auto" ${p.activo !== false ? "checked" : ""}> Paciente activo (aparece en Facturar)
+      </label>
+
+      <div style="margin-top:16px">
+        <div class="desc-head"><span class="small muted">Así va a quedar el texto (ejemplo con 8 sesiones de ${esc(nombreMes(mesActual))})</span></div>
+        <div class="desc" id="previewPac"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:14px;flex-wrap:wrap">
+        <div>${nuevo ? "" : `<button type="button" class="btn bad" id="btnBorrarPac">Borrar paciente</button>`}</div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn" id="btnCancelarPac">Cancelar</button>
+          <button type="submit" class="btn pri">Guardar</button>
+        </div>
+      </div>
+    </form>
+  `;
+  const f = $("#formPac");
+  const leer = () => {
+    const d = Object.fromEntries(new FormData(f));
+    d.activo = f.activo.checked;
+    d.tope = d.tope ? parseInt(d.tope, 10) : "";
+    d.valorSesion = d.valorSesion ? String(d.valorSesion).replace(",", ".") : "";
+    return d;
+  };
+  const actualizar = () => {
+    const d = leer();
+    const o = S.obras.find(x => x.id === d.obraId);
+    $$(".tercero", f).forEach(x => x.classList.toggle("hidden", d.facturarA !== "tercero"));
+    $$(".valorPropio", f).forEach(x => x.classList.toggle("hidden", !o || o.usaResolucion));
+    if (!o) { $("#previewPac").innerHTML = '<span class="muted">Elegí la obra social para ver el texto.</span>'; return; }
+    const r = calcular(d, mesActual, 8);
+    $("#previewPac").innerHTML = textoHtml(trozos(o.plantilla, r.vars), true);
+  };
+  f.addEventListener("input", actualizar);
+  // Al elegir obra social, sugerir a quién se factura
+  f.obraId.addEventListener("change", () => {
+    const o = S.obras.find(x => x.id === f.obraId.value);
+    if (o) f.facturarA.value = o.facturarA || "obra";
+    actualizar();
+  });
+  actualizar();
+
+  f.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const d = leer();
+    if (nuevo) S.pacientes.push({ id: uid("p"), ...d });
+    else Object.assign(p, d);
+    guardar();
+    toast("Paciente guardado");
+    editPac = null;
+    renderPacientes();
+  });
+  $("#btnCancelarPac").addEventListener("click", () => { editPac = null; renderPacientes(); });
+  const bb = $("#btnBorrarPac");
+  if (bb) bb.addEventListener("click", () => {
+    if (!confirm(`¿Borrar a ${p.nombre} ${p.apellido}? Si solo dejó de venir, mejor desmarcá "Paciente activo".`)) return;
+    S.pacientes = S.pacientes.filter(x => x.id !== p.id);
+    guardar();
+    editPac = null;
+    renderPacientes();
+  });
+}
+
+/* ============================================================
+   OBRAS SOCIALES
+   ============================================================ */
+let editObra = null;
+const PAC_MUESTRA = { nombre: "Juan Pablo", apellido: "Pérez", dni: "55123456", afiliado: "12345678", cuil: "20-55123456-7", dx: "Diagnóstico de ejemplo", valorSesion: "40000" };
+
+function renderObras() {
+  const el = $("#view-obras");
+  if (editObra) return renderFormObra(el);
+  const lista = [...S.obras].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  el.innerHTML = `
+    <div class="lista-item" style="margin-bottom:12px">
+      <h2 style="margin:0">Obras sociales (${lista.length})</h2>
+      <button class="btn pri" id="btnNuevaObra">+ Obra social nueva</button>
+    </div>
+    <p class="small muted">Cada obra social tiene su propio texto. Si una cambia el formato, editalo acá y queda para todos sus pacientes.</p>
+    ${lista.map(o => {
+      const cant = S.pacientes.filter(p => p.obraId === o.id).length;
+      return `<div class="card lista-item">
+        <div>
+          <b>${esc(o.nombre)}</b>
+          <div class="small muted">${o.cuit ? "CUIT " + esc(o.cuit) + " · " : ""}${esc(o.iva)} · ${cant} paciente(s)${o.usaResolucion ? "" : " · sin resolución"}</div>
+        </div>
+        <div class="acciones"><button class="btn sm" data-editar-obra="${o.id}">Editar</button></div>
+      </div>`;
+    }).join("")}
+  `;
+  $("#btnNuevaObra").addEventListener("click", () => { editObra = "nueva"; renderObras(); });
+}
+
+function renderFormObra(el) {
+  const nueva = editObra === "nueva";
+  const o = nueva ? { usaResolucion: true, facturarA: "obra", iva: "Sujeto exento", plantilla: PLANTILLA_BASE } : S.obras.find(x => x.id === editObra);
+  const IVAS = ["Responsable Inscripto", "Sujeto exento", "Consumidor final", "Monotributo"];
+  el.innerHTML = `
+    <h2>${nueva ? "Obra social nueva" : "Editar " + esc(o.nombre)}</h2>
+    <form id="formObra" class="card" autocomplete="off">
+      <div class="row">
+        <div><label>Nombre</label><input name="nombre" value="${esc(o.nombre)}" required></div>
+        <div><label>CUIT (sin guiones)</label><input name="cuit" inputmode="numeric" value="${esc(o.cuit)}"></div>
+        <div><label>Condición de IVA</label>
+          <select name="iva">${IVAS.map(i => `<option ${o.iva === i ? "selected" : ""}>${i}</option>`).join("")}</select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label>Por defecto se factura</label>
+          <select name="facturarA">
+            <option value="obra" ${o.facturarA !== "tercero" ? "selected" : ""}>A la obra social</option>
+            <option value="tercero" ${o.facturarA === "tercero" ? "selected" : ""}>A padre/madre (consumidor final)</option>
+          </select>
+        </div>
+        <div><label>Valor por sesión</label>
+          <select name="usaResolucion">
+            <option value="1" ${o.usaResolucion ? "selected" : ""}>Según resolución del mes</option>
+            <option value="0" ${!o.usaResolucion ? "selected" : ""}>Propio de cada paciente</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px"><label>Notas</label><input name="notas" value="${esc(o.notas)}"></div>
+
+      <div style="margin-top:14px">
+        <label>Texto de la descripción</label>
+        <div class="small muted">Tocá un dato para insertarlo donde está el cursor.</div>
+        <div class="chips">${VARIABLES.map(([k, d]) => `<button type="button" class="chip" title="${esc(d)}" data-var="${k}">{${k}}</button>`).join("")}</div>
+        <textarea name="plantilla">${esc(o.plantilla)}</textarea>
+      </div>
+      <div style="margin-top:12px">
+        <div class="desc-head"><span class="small muted">Vista previa con un paciente inventado (8 sesiones de ${esc(nombreMes(mesActual))})</span></div>
+        <div class="desc" id="previewObra"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:14px;flex-wrap:wrap">
+        <div>${nueva ? "" : `<button type="button" class="btn bad" id="btnBorrarObra">Borrar</button>`}</div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn" id="btnCancelarObra">Cancelar</button>
+          <button type="submit" class="btn pri">Guardar</button>
+        </div>
+      </div>
+    </form>
+  `;
+  const f = $("#formObra");
+  const ta = f.plantilla;
+  const actualizar = () => {
+    const tmp = { id: "_tmp", usaResolucion: f.usaResolucion.value === "1", plantilla: ta.value };
+    S.obras.push(tmp);
+    const r = calcular({ ...PAC_MUESTRA, obraId: "_tmp" }, mesActual, 8);
+    S.obras.pop();
+    $("#previewObra").innerHTML = textoHtml(trozos(ta.value, r.vars), true);
+  };
+  f.addEventListener("input", actualizar);
+  $$(".chip", f).forEach(ch => ch.addEventListener("click", () => {
+    const ins = "{" + ch.dataset.var + "}";
+    const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+    ta.value = ta.value.slice(0, a) + ins + ta.value.slice(b);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = a + ins.length;
+    actualizar();
+  }));
+  actualizar();
+
+  f.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(f));
+    d.usaResolucion = d.usaResolucion === "1";
+    d.cuit = d.cuit.replace(/\D/g, "");
+    if (nueva) S.obras.push({ id: uid("o"), ...d });
+    else Object.assign(o, d);
+    guardar();
+    toast("Obra social guardada");
+    editObra = null;
+    renderObras();
+  });
+  $("#btnCancelarObra").addEventListener("click", () => { editObra = null; renderObras(); });
+  const bb = $("#btnBorrarObra");
+  if (bb) bb.addEventListener("click", () => {
+    const cant = S.pacientes.filter(p => p.obraId === o.id).length;
+    if (cant) { alert(`No se puede borrar: tiene ${cant} paciente(s). Cambiales la obra social primero.`); return; }
+    if (!confirm(`¿Borrar ${o.nombre}?`)) return;
+    S.obras = S.obras.filter(x => x.id !== o.id);
+    guardar();
+    editObra = null;
+    renderObras();
+  });
+}
+
+/* ============================================================
+   VALORES POR MES
+   ============================================================ */
+let editValor = null; // mes en edición
+
+function renderValores() {
+  const el = $("#view-valores");
+  const lista = [...S.valores].sort((a, b) => b.mes.localeCompare(a.mes));
+  const ed = editValor ? S.valores.find(v => v.mes === editValor) : null;
+  el.innerHTML = `
+    <h2>Valores por mes</h2>
+    <p class="small muted">Cuando llega la resolución nueva de la Superintendencia, cargala acá. Se guarda el historial para poder facturar meses atrasados.</p>
+    <form id="formValor" class="card">
+      <div class="row">
+        <div><label>Mes</label><input type="month" name="mes" value="${esc(ed ? ed.mes : siguienteMesSinValor())}" required ${ed ? "readonly" : ""}></div>
+        <div><label>N° de resolución</label><input name="resolucion" value="${esc(ed ? ed.resolucion : "")}" placeholder="3487/2026" required></div>
+        <div><label>Valor por sesión</label><input name="valor" inputmode="decimal" value="${ed ? numCopia(aCentavos(ed.valor)) : ""}" placeholder="21297.10" required></div>
+        <div style="flex:0 0 auto;display:flex;gap:6px">
+          ${ed ? `<button type="button" class="btn" id="btnCancelarValor">Cancelar</button>` : ""}
+          <button class="btn pri">${ed ? "Guardar" : "Agregar"}</button>
+        </div>
+      </div>
+    </form>
+    <div class="card" style="padding:4px 12px">
+      <table>
+        <thead><tr><th>Mes</th><th>Resolución</th><th>Valor por sesión</th><th></th></tr></thead>
+        <tbody>
+          ${lista.map(v => `<tr>
+            <td>${esc(nombreMes(v.mes))}</td>
+            <td>${esc(v.resolucion)}</td>
+            <td>${numVer(aCentavos(v.valor))}</td>
+            <td class="acciones">
+              <button class="btn sm" data-editar-valor="${v.mes}">Editar</button>
+              <button class="btn sm bad" data-borrar-valor="${v.mes}">Borrar</button>
+            </td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+  $("#formValor").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    const valor = parseFloat(String(d.valor).replace(/\s/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+    if (!(valor > 0)) { alert("Revisá el valor por sesión. Ejemplo: 21297.10"); return; }
+    const existente = S.valores.find(v => v.mes === d.mes);
+    if (existente && !ed && !confirm(`Ya hay un valor para ${nombreMes(d.mes)}. ¿Reemplazarlo?`)) return;
+    if (existente) Object.assign(existente, { resolucion: d.resolucion.trim(), valor });
+    else S.valores.push({ mes: d.mes, resolucion: d.resolucion.trim(), valor });
+    guardar();
+    toast("Valor guardado");
+    editValor = null;
+    renderValores();
+  });
+  const bc = $("#btnCancelarValor");
+  if (bc) bc.addEventListener("click", () => { editValor = null; renderValores(); });
+  $$("[data-editar-valor]", el).forEach(b => b.addEventListener("click", () => { editValor = b.dataset.editarValor; renderValores(); }));
+  $$("[data-borrar-valor]", el).forEach(b => b.addEventListener("click", () => {
+    const m = b.dataset.borrarValor;
+    if (!confirm(`¿Borrar el valor de ${nombreMes(m)}?`)) return;
+    S.valores = S.valores.filter(v => v.mes !== m);
+    guardar();
+    renderValores();
+  }));
+}
+function siguienteMesSinValor() {
+  if (!S.valores.length) return mesAnterior();
+  const max = S.valores.map(v => v.mes).sort().pop();
+  let [a, m] = max.split("-").map(Number);
+  m++; if (m > 12) { m = 1; a++; }
+  return a + "-" + String(m).padStart(2, "0");
+}
+
+/* ============================================================
+   COPIA DE SEGURIDAD
+   ============================================================ */
+function renderCopia() {
+  const el = $("#view-copia");
+  el.innerHTML = `
+    <h2>Copia de seguridad</h2>
+    <div class="alert info">Todos los datos quedan guardados <b>solo en este navegador, en esta PC</b>. No se suben a internet. Si se borra el historial del navegador o cambiás de PC, se pierden. Por eso: guardá una copia cada mes, después de facturar.</div>
+    <div class="card">
+      <b>Guardar copia</b>
+      <p class="small muted" style="margin:4px 0 10px">Baja un archivo con pacientes, obras sociales y valores. ${S.ultimaCopia ? "Última copia: " + new Date(S.ultimaCopia).toLocaleDateString("es-AR") + "." : "Todavía no guardaste ninguna."}</p>
+      <button class="btn pri" id="btnExportar">Guardar copia</button>
+    </div>
+    <div class="card">
+      <b>Recuperar copia</b>
+      <p class="small muted" style="margin:4px 0 10px">Reemplaza todo lo que hay ahora por lo del archivo.</p>
+      <input type="file" id="inImportar" accept=".json,application/json" style="width:auto">
+    </div>
+    <div class="alert warn">El archivo tiene datos de pacientes, incluido el diagnóstico. Guardalo en un lugar seguro y no lo mandes por mail ni WhatsApp.</div>
+  `;
+  $("#btnExportar").addEventListener("click", () => {
+    S.ultimaCopia = new Date().toISOString();
+    guardar();
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "facturacion-copia-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    renderCopia();
+  });
+  $("#inImportar").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const d = JSON.parse(await file.text());
+      if (!Array.isArray(d.pacientes) || !Array.isArray(d.obras) || !Array.isArray(d.valores)) throw new Error("formato");
+      if (!confirm(`El archivo tiene ${d.pacientes.length} paciente(s), ${d.obras.length} obra(s) social(es) y ${d.valores.length} valor(es). ¿Reemplazar lo actual?`)) return;
+      S = d;
+      S.sesiones = S.sesiones || {};
+      S.facturado = S.facturado || {};
+      guardar();
+      toast("Copia recuperada");
+      renderCopia();
+    } catch (err) {
+      alert("Ese archivo no es una copia válida de esta herramienta.");
+    } finally {
+      e.target.value = "";
+    }
+  });
+}
+
+/* ============================================================
+   Datos de ejemplo (inventados)
+   ============================================================ */
+function cargarEjemplo() {
+  const ob = (n) => (S.obras.find(o => o.nombre === n) || {}).id;
+  S.pacientes.push(
+    { id: uid("p"), nombre: "Tomás Ignacio", apellido: "Ejemplo", dni: "55111222", afiliado: "20551112223-084-00-03", dx: "Trastorno de ejemplo", obraId: ob("OSUOMRA"), consultorio: "ENA", facturarA: "obra", tope: 8, horario: "Mar y jue 16 a 17", activo: true },
+    { id: uid("p"), nombre: "Lucía", apellido: "Prueba", dni: "54333444", afiliado: "7000001", dx: "TEL", obraId: ob("OSAP"), consultorio: "CRECER", facturarA: "obra", tope: "", horario: "Lun, mié y vie 15 a 16", activo: true },
+    { id: uid("p"), nombre: "Mateo", apellido: "Inventado", dni: "57888999", afiliado: "", dx: "", obraId: ob("Particular"), consultorio: "ENA", facturarA: "tercero", terceroNombre: "Carlos Inventado", terceroDoc: "30111222", valorSesion: "40000", tope: "", horario: "", activo: true },
+  );
+  guardar();
+  toast("Pacientes de ejemplo cargados");
+  renderFacturar();
+}
+
+/* ============================================================
+   Clicks generales
+   ============================================================ */
+document.addEventListener("click", (e) => {
+  const ir = e.target.closest("[data-ir]");
+  if (ir) { e.preventDefault(); irA(ir.dataset.ir); return; }
+  const cp = e.target.closest("[data-copiar]");
+  if (cp) { copiar(cp.dataset.copiar); return; }
+  const ep = e.target.closest("[data-editar-pac]");
+  if (ep) { editPac = ep.dataset.editarPac; irA("pacientes"); return; }
+  const eo = e.target.closest("[data-editar-obra]");
+  if (eo) { editObra = eo.dataset.editarObra; renderObras(); return; }
+});
+
+cargar();
+guardar();
+render();
+</script>
+</body>
+</html>
