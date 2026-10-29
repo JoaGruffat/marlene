@@ -118,6 +118,41 @@
   dialog#ayuda ol, dialog#ayuda ul { margin: 0; padding-left: 22px; }
   dialog#ayuda li { margin-bottom: 6px; }
   .copia-pendiente { color: var(--warn) !important; font-weight: 600; }
+
+  /* Diálogo de N° de factura */
+  dialog#dlgFactura {
+    border: 0; border-radius: 12px; padding: 20px 22px; max-width: 440px; width: calc(100% - 32px);
+    color: var(--ink); background: var(--card);
+  }
+  dialog#dlgFactura::backdrop { background: rgba(20, 24, 30, .45); }
+
+  /* Registro / hoja imprimible */
+  .hoja {
+    background: #fff; border: 1px solid var(--line); border-radius: 4px;
+    padding: 36px 40px; box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  .membrete { border-bottom: 2px solid var(--accent); padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+  .membrete .nombre { font-family: Georgia, "Times New Roman", serif; font-size: 26px; letter-spacing: .01em; color: var(--accent); line-height: 1.1; }
+  .membrete .prof { font-family: Georgia, "Times New Roman", serif; font-size: 15px; color: var(--muted); font-style: italic; }
+  .membrete .meta { text-align: right; font-size: 13px; color: var(--muted); }
+  .hoja table td, .hoja table th { padding: 7px 6px; font-size: 14px; }
+  .hoja tfoot td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: 0; }
+  .num { text-align: right !important; white-space: nowrap; }
+  .centro { text-align: center !important; }
+  .nw { white-space: nowrap; }
+  .solo-print { display: none; }
+  @media (max-width: 640px) { .hoja { padding: 18px 12px; overflow-x: auto; } }
+
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body { background: #fff; }
+    header, .no-print, .toast, dialog { display: none !important; }
+    .solo-print { display: inline !important; }
+    main { padding: 0; }
+    .wrap { max-width: none; padding: 0; }
+    .hoja { border: 0; box-shadow: none; padding: 0; }
+    .hoja tr { break-inside: avoid; }
+  }
   @media (max-width: 560px) {
     .pac { grid-template-columns: 1fr 90px; }
   }
@@ -137,6 +172,7 @@
       <button data-view="facturar" class="on">Facturar</button>
       <button data-view="pacientes">Pacientes</button>
       <button data-view="obras">Obras sociales</button>
+      <button data-view="registro">Registro</button>
       <button data-view="valores">Valores por mes</button>
       <button data-view="copia">Copia de seguridad</button>
     </nav>
@@ -147,11 +183,28 @@
   <section id="view-facturar"></section>
   <section id="view-pacientes" class="hidden"></section>
   <section id="view-obras" class="hidden"></section>
+  <section id="view-registro" class="hidden"></section>
   <section id="view-valores" class="hidden"></section>
   <section id="view-copia" class="hidden"></section>
 </main>
 
 <div class="toast" id="toast"></div>
+
+<dialog id="dlgFactura">
+  <form id="formFactura" method="dialog">
+    <h2 style="margin:0 0 4px">Marcar como facturado</h2>
+    <p class="small muted" id="dlgFacturaPac" style="margin:0 0 12px"></p>
+    <div class="row">
+      <div style="flex:0 0 90px"><label>Punto de venta</label><input name="pv" inputmode="numeric" required></div>
+      <div><label>N° de factura que dio ARCA</label><input name="numero" inputmode="numeric" required></div>
+    </div>
+    <p class="small muted" id="dlgFacturaAyuda" style="margin:8px 0 0"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button type="button" class="btn" id="btnCancelarFactura">Cancelar</button>
+      <button class="btn ok">Guardar en el registro</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="ayuda">
   <div class="ayuda-head">
@@ -173,7 +226,8 @@
     <li>Andá a <b>Facturar</b> y elegí el mes que facturás (normalmente, el anterior).</li>
     <li>En cada paciente, poné la <b>cantidad de sesiones</b>. Aparecen los datos y el texto armado.</li>
     <li>En ARCA, usá los botones <b>Copiar</b>: CUIT, valor por sesión y <b>Copiar descripción</b>. Pegá cada uno en su lugar.</li>
-    <li>Cuando emitas la factura, tocá <b>Marcar como facturado</b>. Así sabés cuántos te faltan.</li>
+    <li>Cuando emitas la factura, tocá <b>Marcar como facturado</b> y confirmá el N° de factura que te dio ARCA. Se anota solo en el <b>Registro</b>, el que reemplaza al cuaderno. La primera vez poné el número real; después te sugiere el siguiente.</li>
+    <li>En <b>Registro</b> elegís el período y tocás <b>Imprimir</b>: sale la planilla con tu membrete.</li>
     <li>Si aparece un aviso amarillo de <b>tope de sesiones</b>, revisá la cantidad antes de facturar.</li>
   </ol>
 
@@ -284,9 +338,21 @@ function estadoInicial() {
     })),
     pacientes: [],
     sesiones: {},    // { "2026-10": { pacienteId: 8 } }
-    facturado: {},   // { "2026-10": { pacienteId: true } }
+    facturado: {},   // { "2026-10": { pacienteId: idDelRegistro } }
+    registro: [],    // facturas emitidas: el cuaderno
+    config: configInicial(),
     ultimaCopia: null,
   };
+}
+function configInicial() {
+  return { nombre: "Marlene Gruffat", profesion: "Psicóloga", puntoVenta: "3", ultimoNumero: 0 };
+}
+// Completa campos que pueden faltar en datos guardados con versiones anteriores
+function normalizar() {
+  S.sesiones = S.sesiones || {};
+  S.facturado = S.facturado || {};
+  S.registro = S.registro || [];
+  S.config = { ...configInicial(), ...(S.config || {}) };
 }
 
 let S;
@@ -298,8 +364,7 @@ function cargar() {
   } catch (e) {
     S = estadoInicial();
   }
-  S.sesiones = S.sesiones || {};
-  S.facturado = S.facturado || {};
+  normalizar();
 }
 // cambio=false cuando no es una modificación de datos (carga inicial, copia de seguridad)
 function guardar(cambio = true) {
@@ -489,7 +554,7 @@ function irA(v) {
   window.scrollTo(0, 0);
 }
 function render() {
-  ({ facturar: renderFacturar, pacientes: renderPacientes, obras: renderObras, valores: renderValores, copia: renderCopia })[vista]();
+  ({ facturar: renderFacturar, pacientes: renderPacientes, obras: renderObras, registro: renderRegistro, valores: renderValores, copia: renderCopia })[vista]();
 }
 
 /* ============================================================
@@ -586,7 +651,7 @@ function renderListaFacturar() {
     ${grupos.get(k).sort((a, b) => (a.apellido || "").localeCompare(b.apellido || "", "es")).map(p => `
       <div class="card pac ${fac[p.id] ? "hecho" : ""}" data-pid="${p.id}">
         <div>
-          <div class="nom">${esc(p.apellido)} ${esc(p.nombre)} ${fac[p.id] ? '<span class="pill ok">Facturado</span>' : ""}</div>
+          <div class="nom">${esc(p.apellido)} ${esc(p.nombre)} ${fac[p.id] ? `<span class="pill ok">Facturado${regDe(fac[p.id]) ? " · " + esc(numFactura(regDe(fac[p.id]))) : ""}</span>` : ""}</div>
           <div class="small muted">
             ${p.consultorio ? esc(p.consultorio) + " · " : ""}${p.horario ? esc(p.horario) + " · " : ""}${p.tope ? "Tope " + esc(p.tope) + " sesiones" : "Sin tope"}
           </div>
@@ -665,10 +730,190 @@ function renderSalida(card, pid) {
   `;
   $("[data-copiar-desc]", out).addEventListener("click", () => copiar(texto));
   $("[data-hecho]", out).addEventListener("click", () => {
-    S.facturado[mesActual] = S.facturado[mesActual] || {};
-    if (hecho) delete S.facturado[mesActual][pid]; else S.facturado[mesActual][pid] = true;
+    if (hecho) desmarcarFacturado(mesActual, pid);
+    else abrirDialogoFactura(p, mesActual, r.totalCent);
+  });
+}
+
+/* ---------- Registro de facturas ---------- */
+const regDe = (id) => S.registro.find(x => x.id === id);
+const numFactura = (r) => "FC " + String(r.pv).padStart(4, "0") + "-" + String(r.numero).padStart(8, "0");
+
+let facturaPendiente = null;
+function abrirDialogoFactura(p, mes, totalCent) {
+  facturaPendiente = { p, mes, totalCent };
+  const f = $("#formFactura");
+  const primera = !S.config.ultimoNumero;
+  f.pv.value = S.config.puntoVenta;
+  f.numero.value = primera ? "" : S.config.ultimoNumero + 1;
+  $("#dlgFacturaPac").textContent = `${p.apellido} ${p.nombre} · ${nombreMes(mes)} · $ ${numVer(totalCent)}`;
+  $("#dlgFacturaAyuda").textContent = primera
+    ? "Es la primera: poné el número que te dio ARCA. Las próximas te las sugiere solo."
+    : `Sugerido: el siguiente al último (${String(S.config.ultimoNumero).padStart(8, "0")}). Si ARCA te dio otro, corregilo.`;
+  $("#dlgFactura").showModal();
+  (primera ? f.numero : f.numero).focus();
+  f.numero.select();
+}
+$("#btnCancelarFactura").addEventListener("click", () => $("#dlgFactura").close());
+$("#formFactura").addEventListener("submit", (e) => {
+  const f = e.target;
+  const pv = parseInt(f.pv.value.replace(/\D/g, ""), 10);
+  const numero = parseInt(f.numero.value.replace(/\D/g, ""), 10);
+  if (!(pv > 0) || !(numero > 0)) { e.preventDefault(); alert("Revisá el punto de venta y el número."); return; }
+  const repetida = S.registro.find(x => x.pv === pv && x.numero === numero);
+  if (repetida && !confirm(`La factura ${numFactura(repetida)} ya está en el registro (${repetida.paciente}). ¿Guardarla igual?`)) { e.preventDefault(); return; }
+  const { p, mes, totalCent } = facturaPendiente;
+  const o = obraDe(p);
+  const reg = {
+    id: uid("f"), pv, numero,
+    fecha: new Date().toISOString().slice(0, 10),
+    mes, pacienteId: p.id,
+    obra: o ? o.nombre : "",
+    paciente: `${p.apellido} ${p.nombre}`.trim(),
+    importeCent: totalCent,
+    enviada: false,
+    cobrado: "",   // fecha AAAA-MM-DD en que cobró
+  };
+  S.registro.push(reg);
+  S.facturado[mes] = S.facturado[mes] || {};
+  S.facturado[mes][p.id] = reg.id;
+  S.config.puntoVenta = String(pv);
+  S.config.ultimoNumero = Math.max(S.config.ultimoNumero || 0, numero);
+  guardar();
+  toast("Anotada en el registro: " + numFactura(reg));
+  renderFacturar();
+});
+
+function desmarcarFacturado(mes, pid) {
+  const regId = (S.facturado[mes] || {})[pid];
+  const reg = regDe(regId);
+  if (reg && !confirm(`Se va a borrar del registro la factura ${numFactura(reg)}. ¿Seguir?`)) return;
+  if (reg) {
+    S.registro = S.registro.filter(x => x.id !== reg.id);
+    // Si era la última, el próximo número vuelve a ser ese
+    if (reg.numero === S.config.ultimoNumero) {
+      S.config.ultimoNumero = S.registro.filter(x => x.pv === reg.pv).reduce((m, x) => Math.max(m, x.numero), reg.numero - 1);
+    }
+  }
+  delete S.facturado[mes][pid];
+  guardar();
+  renderFacturar();
+}
+
+let filtroRegistro = null; // mes, o "" para todos
+let filtroEstado = "";      // "", "sinEnviar", "sinCobrar"
+const fechaVer = (iso) => iso ? new Date(iso + "T12:00").toLocaleDateString("es-AR") : "";
+function renderRegistro() {
+  const el = $("#view-registro");
+  const periodos = [...new Set(S.registro.map(r => r.mes))].sort().reverse();
+  if (filtroRegistro === null) filtroRegistro = periodos[0] || "";
+  const filas = S.registro
+    .filter(r => !filtroRegistro || r.mes === filtroRegistro)
+    .filter(r => filtroEstado !== "sinEnviar" || !r.enviada)
+    .filter(r => filtroEstado !== "sinCobrar" || !r.cobrado)
+    .sort((a, b) => a.pv - b.pv || a.numero - b.numero);
+  const total = filas.reduce((s, r) => s + r.importeCent, 0);
+  const cobradoCent = filas.filter(r => r.cobrado).reduce((s, r) => s + r.importeCent, 0);
+  const tituloEstado = { sinEnviar: " · Sin enviar", sinCobrar: " · Sin cobrar" }[filtroEstado] || "";
+  const c = S.config;
+  el.innerHTML = `
+    <div class="no-print">
+      <h2>Registro de facturas</h2>
+      <p class="small muted" style="margin-top:-6px">Se completa solo cada vez que marcás un paciente como facturado. Reemplaza al cuaderno.</p>
+      <div class="row" style="margin-bottom:14px">
+        <div style="flex:0 0 220px"><label>Período facturado</label>
+          <select id="rPeriodo">
+            <option value="">Todos</option>
+            ${periodos.map(m => `<option value="${m}" ${m === filtroRegistro ? "selected" : ""}>${esc(nombreMes(m))}</option>`).join("")}
+          </select>
+        </div>
+        <div style="flex:0 0 180px"><label>Mostrar</label>
+          <select id="rEstado">
+            <option value="">Todas</option>
+            <option value="sinEnviar" ${filtroEstado === "sinEnviar" ? "selected" : ""}>Sin enviar</option>
+            <option value="sinCobrar" ${filtroEstado === "sinCobrar" ? "selected" : ""}>Sin cobrar</option>
+          </select>
+        </div>
+        <div style="flex:0 0 auto;margin-left:auto;display:flex;gap:6px">
+          <button class="btn" id="btnMembrete">Editar membrete</button>
+          <button class="btn pri" id="btnImprimir" ${filas.length ? "" : "disabled"}>Imprimir</button>
+        </div>
+      </div>
+      <form id="formMembrete" class="card hidden">
+        <div class="row">
+          <div><label>Nombre</label><input name="nombre" value="${esc(c.nombre)}"></div>
+          <div><label>Profesión</label><input name="profesion" value="${esc(c.profesion)}"></div>
+          <div style="flex:0 0 auto"><button class="btn pri">Guardar</button></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="hoja">
+      <div class="membrete">
+        <div>
+          <div class="nombre">${esc(c.nombre)}</div>
+          <div class="prof">${esc(c.profesion)}</div>
+        </div>
+        <div class="meta">
+          Registro de facturación<br>
+          ${filtroRegistro ? "Período: " + esc(nombreMes(filtroRegistro)) : "Todos los períodos"}${tituloEstado}<br>
+          Impreso el ${new Date().toLocaleDateString("es-AR")}
+        </div>
+      </div>
+      ${filas.length ? `
+      <table>
+        <thead><tr>
+          <th>N° factura</th><th>Fecha</th><th>Obra social</th><th>Apellido y nombre</th><th>Período</th><th class="num">Importe</th><th class="centro">Enviada</th><th>Cobrada</th>
+        </tr></thead>
+        <tbody>
+          ${filas.map(r => `<tr data-reg="${r.id}">
+            <td class="nw">${esc(numFactura(r))}</td>
+            <td>${esc(fechaVer(r.fecha))}</td>
+            <td>${esc(r.obra)}</td>
+            <td>${esc(r.paciente)}</td>
+            <td class="nw">${esc(nombreMes(r.mes))}</td>
+            <td class="num">$ ${numVer(r.importeCent)}</td>
+            <td class="centro">
+              <input type="checkbox" class="no-print rEnviada" style="width:auto" ${r.enviada ? "checked" : ""} aria-label="Enviada">
+              <span class="solo-print">${r.enviada ? "✓" : ""}</span>
+            </td>
+            <td>
+              <input type="date" class="no-print rCobrado" value="${esc(r.cobrado)}" style="padding:4px 6px;min-width:130px" aria-label="Fecha de cobro">
+              <span class="solo-print">${esc(fechaVer(r.cobrado))}</span>
+            </td>
+          </tr>`).join("")}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="5">Total · ${filas.length} factura(s)</td>
+          <td class="num">$ ${numVer(total)}</td>
+          <td colspan="2"></td>
+        </tr></tfoot>
+      </table>
+      <p class="small" style="margin:10px 0 0">Cobrado: <b>$ ${numVer(cobradoCent)}</b> · Pendiente de cobro: <b>$ ${numVer(total - cobradoCent)}</b></p>
+      ` : `<p class="muted">${S.registro.length ? "No hay facturas con ese filtro." : 'Todavía no hay facturas en el registro. Se agregan al tocar "Marcar como facturado" en Facturar.'}</p>`}
+    </div>
+  `;
+  $("#rPeriodo").addEventListener("change", (e) => { filtroRegistro = e.target.value; renderRegistro(); });
+  $("#rEstado").addEventListener("change", (e) => { filtroEstado = e.target.value; renderRegistro(); });
+  $$("tr[data-reg]", el).forEach(tr => {
+    const reg = regDe(tr.dataset.reg);
+    $(".rEnviada", tr).addEventListener("change", (e) => { reg.enviada = e.target.checked; guardar(); actualizarTotales(); });
+    $(".rCobrado", tr).addEventListener("change", (e) => { reg.cobrado = e.target.value; guardar(); actualizarTotales(); });
+  });
+  // Refresca los textos de impresión y totales sin perder el foco del campo
+  function actualizarTotales() {
+    clearTimeout(actualizarTotales._t);
+    actualizarTotales._t = setTimeout(renderRegistro, 600);
+  }
+  $("#btnImprimir").addEventListener("click", () => window.print());
+  $("#btnMembrete").addEventListener("click", () => $("#formMembrete").classList.toggle("hidden"));
+  $("#formMembrete").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    S.config.nombre = d.nombre.trim();
+    S.config.profesion = d.profesion.trim();
     guardar();
-    renderFacturar();
+    renderRegistro();
   });
 }
 
@@ -1052,8 +1297,7 @@ function renderCopia() {
       if (!Array.isArray(d.pacientes) || !Array.isArray(d.obras) || !Array.isArray(d.valores)) throw new Error("formato");
       if (!confirm(`El archivo tiene ${d.pacientes.length} paciente(s), ${d.obras.length} obra(s) social(es) y ${d.valores.length} valor(es). ¿Reemplazar lo actual?`)) return;
       S = d;
-      S.sesiones = S.sesiones || {};
-      S.facturado = S.facturado || {};
+      normalizar();
       S.ultimoCambio = null;
       guardar(false);
       toast("Copia recuperada");
